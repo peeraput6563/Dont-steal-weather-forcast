@@ -3,6 +3,7 @@
   "latitude": 10.677157,
   "longitude": 99.052846,
   "rain_threshold": 75,
+  "models": ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "jma_seamless"],
   "alert_hours": [7, 12, 17],
   "plots": [
     {

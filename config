@@ -1,0 +1,15 @@
+{
+  "garden_name": "สวนแก่งกะอิ",
+  "latitude": 10.677157,
+  "longitude": 99.052846,
+  "rain_threshold": 75,
+  "alert_hours": [7, 12, 17],
+  "plots": [
+    {
+      "name": "แก่งกะอิ",
+      "channel": 1,
+      "water_below": 40,
+      "skip_above": 50
+    }
+  ]
+}

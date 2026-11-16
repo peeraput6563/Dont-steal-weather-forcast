@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>สวนแก่งกะอิ</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ground: #101a14;
+    --card: #1a2a21;
+    --line: #2c4033;
+    --text: #eef2e8;
+    --muted: #9fb3a4;
+    --dry: #c98f4a;
+    --mid: #5b6f61;
+    --wet: #4fb6cc;
+    --good: #8fd694;
+    --warn: #f2c14e;
+    --bad: #ff7a59;
+  }
+  * { box-sizing: border-box; margin: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--ground);
+    color: var(--text);
+    font-family: "Noto Sans Thai", "Sarabun", system-ui, sans-serif;
+    overflow: hidden;
+  }
+  #stage {
+    height: 100%;
+    padding: 3vh 3vw;
+    display: flex;
+    flex-direction: column;
+    gap: 3vh;
+    transition: transform 20s linear;
+  }
+  header {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 3vw;
+    flex-wrap: wrap;
+  }
+  h1 { font-size: clamp(28px, 4.5vw, 72px); font-weight: 800; line-height: 1.1; }
+  #clock { font-size: clamp(18px, 2.4vw, 40px); color: var(--muted); }
+  .top-stats { display: flex; gap: 4vw; }
+  .stat .v { font-size: clamp(36px, 6vw, 100px); font-weight: 800; line-height: 1; }
+  .stat .l { font-size: clamp(14px, 1.6vw, 26px); color: var(--muted); margin-top: .4vh; }
+  .stat.rain.high .v { color: var(--wet); }
+
+  #plots {
+    flex: 1;
+    min-height: 0;
+    display: grid;
+    gap: 2.5vw;
+    grid-template-columns: repeat(var(--cols, 1), 1fr);
+  }
+  .plot {
+    background: var(--card);
+    border: 2px solid var(--line);
+    border-radius: 18px;
+    padding: 3vh 2.5vw;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    min-width: 0;
+  }
+  .plot .name { font-size: clamp(24px, 3.2vw, 52px); font-weight: 700; }
+  .plot .big { display: flex; align-items: baseline; gap: .6vw; }
+  .plot .num { font-size: clamp(80px, 17vw, 280px); font-weight: 800; line-height: .95; }
+  .plot .unit { font-size: clamp(28px, 4vw, 64px); color: var(--muted); }
+  .verdict {
+    font-size: clamp(22px, 3vw, 50px);
+    font-weight: 700;
+    padding: 1.4vh 1.6vw;
+    border-radius: 12px;
+    width: fit-content;
+    max-width: 100%;
+  }
+  .skip .verdict, .ok .verdict { background: rgba(143,214,148,.16); color: var(--good); }
+  .wait .verdict { background: rgba(242,193,78,.16); color: var(--warn); }
+  .water .verdict { background: rgba(255,122,89,.18); color: var(--bad); }
+  .unknown .verdict { background: rgba(159,179,164,.16); color: var(--muted); }
+  .water { border-color: var(--bad); }
+
+  /* แถบวัดความชื้น: ช่วงแห้ง / กลาง / ชื้นพอ */
+  .gauge { position: relative; height: 3.2vh; min-height: 18px; display: flex; border-radius: 99px; overflow: hidden; }
+  .gauge i { display: block; height: 100%; }
+  .gauge .dry { background: var(--dry); }
+  .gauge .mid { background: var(--mid); }
+  .gauge .wet { background: var(--wet); }
+  .mark {
+    position: absolute; top: -35%; bottom: -35%; width: 6px;
+    background: var(--text); border-radius: 3px; transform: translateX(-50%);
+    box-shadow: 0 0 0 3px var(--card);
+  }
+  .scale { display: flex; justify-content: space-between; color: var(--muted); font-size: clamp(14px, 1.5vw, 24px); margin-top: .8vh; }
+
+  footer { color: var(--muted); font-size: clamp(14px, 1.4vw, 22px); display: flex; justify-content: space-between; gap: 2vw; }
+  #stale { color: var(--bad); font-weight: 700; }
+
+  @media (max-width: 800px) { #plots { grid-template-columns: 1fr; } }
+  @media (prefers-reduced-motion: reduce) { #stage { transition: none; } }
+</style>
+</head>
+<body>
+<div id="stage">
+  <header>
+    <div>
+      <h1 id="garden">สวนแก่งกะอิ</h1>
+      <div id="clock"></div>
+    </div>
+    <div class="top-stats">
+      <div class="stat"><div class="v" id="temp">--</div><div class="l">อุณหภูมิ</div></div>
+      <div class="stat rain" id="rainbox"><div class="v" id="rain">--</div><div class="l">โอกาสฝนวันนี้</div></div>
+    </div>
+  </header>
+
+  <section id="plots"></section>
+
+  <footer>
+    <span id="updated">กำลังโหลด...</span>
+    <span id="stale"></span>
+  </footer>
+</div>
+
+<script>
+const $ = s => document.querySelector(s);
+const fmt = (v, d = 0) => (v === null || v === undefined) ? "--" : Number(v).toFixed(d);
+
+function tick() {
+  $("#clock").textContent = new Date().toLocaleString("th-TH", {
+    timeZone: "Asia/Bangkok", weekday: "long", day: "numeric", month: "long",
+    hour: "2-digit", minute: "2-digit"
+  });
+}
+
+function plotHTML(p) {
+  const a = p.water_below, b = p.skip_above - p.water_below, c = 100 - p.skip_above;
+  const pos = p.soil === null ? null : Math.max(0, Math.min(100, p.soil));
+  return `
+  <article class="plot ${p.status}">
+    <div class="name">${p.name}</div>
+    <div class="big"><span class="num">${fmt(p.soil)}</span><span class="unit">%</span></div>
+    <div>
+      <div class="gauge">
+        <i class="dry" style="width:${a}%"></i><i class="mid" style="width:${b}%"></i><i class="wet" style="width:${c}%"></i>
+        ${pos === null ? "" : `<span class="mark" style="left:${pos}%"></span>`}
+      </div>
+      <div class="scale"><span>แห้ง &lt; ${p.water_below}%</span><span>ชื้นพอ &gt; ${p.skip_above}%</span></div>
+    </div>
+    <div class="verdict">${p.text}</div>
+  </article>`;
+}
+
+function render(d) {
+  $("#garden").textContent = d.garden_name;
+  document.title = d.garden_name;
+  $("#temp").textContent = d.temp === null ? "--" : fmt(d.temp, 1) + "°";
+  $("#rain").textContent = d.rain === null ? "--" : fmt(d.rain) + "%";
+  $("#rainbox").classList.toggle("high", d.rain !== null && d.rain >= d.rain_threshold);
+  $("#plots").style.setProperty("--cols", Math.min(d.plots.length, 4));
+  $("#plots").innerHTML = d.plots.map(plotHTML).join("");
+
+  const t = new Date(d.updated_at);
+  $("#updated").textContent = "อัปเดตล่าสุด " + t.toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
+  const ageMin = (Date.now() - t.getTime()) / 60000;
+  $("#stale").textContent = ageMin > 30 ? "ข้อมูลเก่ากว่า 30 นาที ตรวจสอบระบบ" : "";
+}
+
+async function load() {
+  try {
+    const r = await fetch("data.json?t=" + Date.now(), { cache: "no-store" });
+    render(await r.json());
+  } catch (e) {
+    $("#stale").textContent = "โหลดข้อมูลไม่ได้";
+  }
+}
+
+// ขยับภาพเล็กน้อยทุก 2 นาที กันภาพติดจอ
+const shifts = [[0,0],[6,4],[-6,8],[4,-6],[-4,-4]];
+let si = 0;
+setInterval(() => {
+  si = (si + 1) % shifts.length;
+  $("#stage").style.transform = `translate(${shifts[si][0]}px, ${shifts[si][1]}px)`;
+}, 120000);
+
+tick(); setInterval(tick, 15000);
+load(); setInterval(load, 60000);
+</script>
+</body>
+</html>

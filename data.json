@@ -1,0 +1,20 @@
+{
+ "garden_name": "สวนแก่งกะอิ",
+ "updated_at": "2026-11-16T14:04+07:00",
+ "temp": 34.0,
+ "humidity": 68.0,
+ "rain": 70,
+ "rain_day": 70,
+ "rain_threshold": 75,
+ "plots": [
+  {
+   "name": "แก่งกะอิ",
+   "soil": 59.0,
+   "water_below": 40,
+   "skip_above": 50,
+   "status": "skip",
+   "text": "ดินชื้นพอ ไม่ต้องรดน้ำ"
+  }
+ ],
+ "last_sent": null
+}

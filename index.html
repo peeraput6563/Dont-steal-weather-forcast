@@ -50,6 +50,11 @@
   .stat .v { font-size: clamp(36px, 6vw, 100px); font-weight: 800; line-height: 1; }
   .stat .l { font-size: clamp(14px, 1.6vw, 26px); color: var(--muted); margin-top: .4vh; }
   .stat.rain.high .v { color: var(--wet); }
+  .stat.vpd.ok .v { color: var(--good); }
+  .stat.vpd.low .v { color: var(--wet); }
+  .stat.vpd.high .v { color: var(--bad); }
+  #vpdline { font-size: clamp(16px, 2vw, 32px); color: var(--muted); }
+  #vpdline b { color: var(--text); }
 
   #plots {
     flex: 1;
@@ -115,11 +120,13 @@
     </div>
     <div class="top-stats">
       <div class="stat"><div class="v" id="temp">--</div><div class="l">อุณหภูมิ</div></div>
+      <div class="stat vpd" id="vpdbox"><div class="v" id="vpd">--</div><div class="l">VPD (kPa)</div></div>
       <div class="stat rain" id="rainbox"><div class="v" id="rain">--</div><div class="l">โอกาสฝนวันนี้</div></div>
     </div>
   </header>
 
   <section id="plots"></section>
+  <div id="vpdline"></div>
 
   <footer>
     <span id="updated">กำลังโหลด...</span>
@@ -162,6 +169,13 @@ function render(d) {
   $("#temp").textContent = d.temp === null ? "--" : fmt(d.temp, 1) + "°";
   $("#rain").textContent = d.rain === null ? "--" : fmt(d.rain) + "%";
   $("#rainbox").classList.toggle("high", d.rain !== null && d.rain >= d.rain_threshold);
+  $("#vpd").textContent = d.vpd === null || d.vpd === undefined ? "--" : fmt(d.vpd, 2);
+  $("#vpdbox").className = "stat vpd " + (d.vpd_status || "");
+  if (d.vpd_range) {
+    $("#vpdline").innerHTML = `ระยะ<b>${d.vpd_stage}</b> เหมาะสม ${d.vpd_range[0]}–${d.vpd_range[1]} kPa · <b>${d.vpd_text || ""}</b>` +
+      (d.vpd_match && d.vpd_match.length ? `<br>ตอนนี้เข้าเกณฑ์ของระยะ: ${d.vpd_match.join(", ")}` : "") +
+      (d.th_source === "indoor" ? `<br>(อุณหภูมิ/ความชื้นจากตัว gateway ในอาคาร)` : "");
+  } else { $("#vpdline").textContent = ""; }
   $("#plots").style.setProperty("--cols", Math.min(d.plots.length, 4));
   $("#plots").innerHTML = d.plots.map(plotHTML).join("");
 

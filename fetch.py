@@ -1,4 +1,5 @@
 import json
+import math
 import os
 from datetime import datetime, timezone, timedelta
 
@@ -26,6 +27,7 @@ except Exception:
 soil = {}
 temp = None
 humidity = None
+th_source = None
 try:
     channels = [f"soil_ch{p['channel']}" for p in cfg["plots"]]
     r = requests.get(
@@ -57,12 +59,14 @@ try:
 
     for p in cfg["plots"]:
         soil[p["channel"]] = val(f"soil_ch{p['channel']}", "soilmoisture", "value")
+    # ใช้อุณหภูมิ+ความชื้นจากจุดเดียวกัน (นอกบ้านก่อน ถ้าไม่มีใช้ในตัว gateway)
     temp = val("outdoor", "temperature", "value")
-    if temp is None:
-        temp = val("indoor", "temperature", "value")
     humidity = val("outdoor", "humidity", "value")
-    if humidity is None:
+    th_source = "outdoor"
+    if temp is None or humidity is None:
+        temp = val("indoor", "temperature", "value")
         humidity = val("indoor", "humidity", "value")
+        th_source = "indoor"
 except Exception as e:
     print("Ecowitt error:", e)
 
@@ -107,6 +111,24 @@ except Exception as e:
     print("Open-Meteo error:", e)
 
 
+# ---------- VPD ----------
+STAGES = cfg.get("vpd_stages", {})
+STAGE = cfg.get("current_stage")
+vpd = None
+if temp is not None and humidity is not None:
+    svp = 0.6108 * math.exp(17.27 * temp / (temp + 237.3))  # kPa
+    vpd = round(svp * (1 - humidity / 100), 2)
+vpd_match = [n for n, (lo, hi) in STAGES.items() if vpd is not None and lo <= vpd <= hi]
+vpd_range = STAGES.get(STAGE)
+vpd_status = None
+if vpd is not None and vpd_range:
+    vpd_status = "low" if vpd < vpd_range[0] else "high" if vpd > vpd_range[1] else "ok"
+VPD_TEXT = {
+    "ok": "อยู่ในช่วงเหมาะสม",
+    "low": "ต่ำกว่าช่วงเหมาะสม (อากาศชื้นมาก)",
+    "high": "สูงกว่าช่วงเหมาะสม (อากาศแห้ง พืชคายน้ำมาก)",
+}
+
 # ---------- 3) ตัดสินใจรดน้ำ ----------
 def decide(s, p):
     rainy = rain is not None and rain >= cfg["rain_threshold"]
@@ -146,6 +168,13 @@ data = {
     "rain": rain,
     "rain_day": rain_day,
     "rain_models": rain_models,
+    "vpd": vpd,
+    "vpd_status": vpd_status,
+    "vpd_text": VPD_TEXT.get(vpd_status),
+    "vpd_stage": STAGE,
+    "vpd_range": vpd_range,
+    "vpd_match": vpd_match,
+    "th_source": th_source,
     "rain_threshold": cfg["rain_threshold"],
     "plots": plots,
     "last_sent": old.get("last_sent"),
@@ -163,6 +192,12 @@ def build_message():
         lines.append("ดึงพยากรณ์ฝนไม่ได้")
     if temp is not None:
         lines.append(f"อุณหภูมิ {temp:.1f}°C")
+    if vpd is not None:
+        lines.append(f"VPD {vpd:.2f} kPa")
+        if vpd_status:
+            lines.append(f"ระยะ{STAGE} ({vpd_range[0]}-{vpd_range[1]}): {VPD_TEXT[vpd_status]}")
+        if th_source == "indoor":
+            lines.append("(อุณหภูมิ/ความชื้นจากตัว gateway ในอาคาร)")
     lines.append("")
     for pl in plots:
         s = "-" if pl["soil"] is None else f"{pl['soil']:.0f}%"

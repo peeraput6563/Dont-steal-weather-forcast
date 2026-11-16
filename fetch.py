@@ -67,8 +67,10 @@ except Exception as e:
     print("Ecowitt error:", e)
 
 # ---------- 2) พยากรณ์ฝนจาก Open-Meteo ----------
-rain = None      # โอกาสฝนที่เหลือของวันนี้ (สูงสุด)
-rain_day = None  # โอกาสฝนสูงสุดทั้งวัน
+MODELS = cfg.get("models", ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "jma_seamless"])
+rain = None         # ค่าเฉลี่ยโอกาสฝนที่เหลือของวันนี้ (จากทุกโมเดลที่มีข้อมูล)
+rain_day = None     # ค่าเฉลี่ยโอกาสฝนสูงสุดทั้งวัน
+rain_models = {}    # ค่าของแต่ละโมเดล (เก็บไว้เทียบความแม่นทีหลัง)
 try:
     r = requests.get(
         "https://api.open-meteo.com/v1/forecast",
@@ -76,21 +78,31 @@ try:
             "latitude": cfg["latitude"],
             "longitude": cfg["longitude"],
             "hourly": "precipitation_probability",
-            "daily": "precipitation_probability_max",
+            "models": ",".join(MODELS),
             "timezone": "Asia/Bangkok",
             "forecast_days": 1,
         },
         timeout=30,
     )
     w = r.json()
-    rain_day = w["daily"]["precipitation_probability_max"][0]
+    times = w["hourly"]["time"]
     start = now.strftime("%Y-%m-%dT%H:00")
-    left = [
-        p
-        for t, p in zip(w["hourly"]["time"], w["hourly"]["precipitation_probability"])
-        if t >= start and p is not None
-    ]
-    rain = max(left) if left else rain_day
+    day_vals = {}
+    for m in MODELS:
+        series = w["hourly"].get(f"precipitation_probability_{m}")
+        if not series:
+            continue
+        valid = [(t, p) for t, p in zip(times, series) if p is not None]
+        left = [p for t, p in valid if t >= start]
+        if valid:
+            day_vals[m] = max(p for t, p in valid)
+        if left:
+            rain_models[m] = max(left)
+    if rain_models:
+        rain = round(sum(rain_models.values()) / len(rain_models))
+    if day_vals:
+        rain_day = round(sum(day_vals.values()) / len(day_vals))
+    print("models used:", rain_models)
 except Exception as e:
     print("Open-Meteo error:", e)
 
@@ -133,6 +145,7 @@ data = {
     "humidity": humidity,
     "rain": rain,
     "rain_day": rain_day,
+    "rain_models": rain_models,
     "rain_threshold": cfg["rain_threshold"],
     "plots": plots,
     "last_sent": old.get("last_sent"),
@@ -145,7 +158,7 @@ ICON = {"skip": "✅", "ok": "✅", "wait": "⏳", "water": "💧", "unknown": "
 def build_message():
     lines = [f"{cfg['garden_name']} {now.strftime('%H:%M')}"]
     if rain is not None:
-        lines.append(f"ฝนวันนี้มีโอกาส {rain:.0f}%")
+        lines.append(f"ฝนวันนี้มีโอกาส {rain:.0f}% (เฉลี่ย {len(rain_models)} โมเดล)")
     else:
         lines.append("ดึงพยากรณ์ฝนไม่ได้")
     if temp is not None:

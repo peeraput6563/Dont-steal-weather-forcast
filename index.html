@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Thai:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.css">
 <style>
   :root {
     --ground: #101a14;
@@ -80,7 +81,7 @@
   }
   .plot .name { font-size: clamp(24px, 3.2vw, 52px); font-weight: 700; }
   .plot .big { display: flex; align-items: baseline; gap: .6vw; }
-  .plot .num { font-size: clamp(80px, 17vw, 280px); font-weight: 800; line-height: .95; }
+  .plot .num { font-size: clamp(64px, 9vw, 200px); font-weight: 800; line-height: .95; }
   .plot .unit { font-size: clamp(28px, 4vw, 64px); color: var(--muted); }
   .verdict {
     font-size: clamp(22px, 3vw, 50px);
@@ -112,7 +113,26 @@
   footer { color: var(--muted); font-size: clamp(14px, 1.4vw, 22px); display: flex; justify-content: space-between; gap: 2vw; }
   #stale { color: var(--bad); font-weight: 700; }
 
-  @media (max-width: 800px) { #plots { grid-template-columns: 1fr; } }
+  #main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 2.5vw; }
+  #left { display: flex; flex-direction: column; gap: 2vh; min-height: 0; min-width: 0; }
+  #mapbox { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; border: 2px solid var(--line); background: var(--card); }
+  #map { position: absolute; inset: 0; background: #0d1511; }
+  #maplabel {
+    position: absolute; left: 12px; bottom: 28px; z-index: 1000;
+    background: rgba(16,26,20,.82); border-radius: 10px; padding: .8vh 1vw;
+    font-size: clamp(14px, 1.6vw, 28px); line-height: 1.35; pointer-events: none;
+  }
+  #maplabel .t { font-weight: 700; color: var(--text); }
+  #maplabel .s { color: var(--muted); font-size: .8em; }
+  #maplabel a { color: var(--muted); }
+  .leaflet-container { font-family: inherit; }
+  @media (max-width: 900px) {
+    #main { grid-template-columns: 1fr; }
+    #mapbox { min-height: 45vh; }
+    #stage { overflow-y: auto; }
+    body { overflow: auto; }
+    #plots { grid-template-columns: 1fr !important; }
+  }
   @media (prefers-reduced-motion: reduce) { #stage { transition: none; } }
 </style>
 </head>
@@ -131,9 +151,17 @@
     </div>
   </header>
 
-  <section id="plots"></section>
-  <div id="raincheck"></div>
-  <div id="vpdline"></div>
+  <div id="main">
+    <div id="left">
+      <section id="plots"></section>
+      <div id="raincheck"></div>
+      <div id="vpdline"></div>
+    </div>
+    <section id="mapbox">
+      <div id="map"></div>
+      <div id="maplabel"><div class="t">เรดาร์ฝน กำลังโหลด...</div></div>
+    </section>
+  </div>
 
   <footer>
     <span id="updated">กำลังโหลด...</span>
@@ -141,6 +169,7 @@
   </footer>
 </div>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const fmt = (v, d = 0) => (v === null || v === undefined) ? "--" : Number(v).toFixed(d);
@@ -195,7 +224,7 @@ function render(d) {
       (d.vpd_match && d.vpd_match.length ? `<br>ตอนนี้เข้าเกณฑ์ของระยะ: ${d.vpd_match.join(", ")}` : "") +
       (d.th_source === "indoor" ? `<br>(อุณหภูมิ/ความชื้นจากตัว gateway ในอาคาร)` : "");
   } else { $("#vpdline").textContent = ""; }
-  $("#plots").style.setProperty("--cols", Math.min(d.plots.length, 4));
+  $("#plots").style.setProperty("--cols", Math.min(d.plots.length, 2));
   $("#plots").innerHTML = d.plots.map(plotHTML).join("");
 
   const t = new Date(d.updated_at);
@@ -221,7 +250,74 @@ setInterval(() => {
   $("#stage").style.transform = `translate(${shifts[si][0]}px, ${shifts[si][1]}px)`;
 }, 120000);
 
+// ---------- แผนที่เรดาร์ฝน (RainViewer) ----------
+let map = null, radar = [], frames = [], frameIdx = 0, animTimer = null;
+const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const hhmm = ts => new Date(ts * 1000).toLocaleTimeString("th-TH", { hour: "2-digit", minute: "2-digit", timeZone: "Asia/Bangkok" });
+
+function setLabel(main, sub) {
+  $("#maplabel").innerHTML = `<div class="t">${main}</div>` + (sub ? `<div class="s">${sub}</div>` : "") +
+    `<div class="s">เรดาร์โดย <a href="https://www.rainviewer.com/">RainViewer</a></div>`;
+}
+
+function showFrame(i) {
+  frameIdx = i;
+  radar.forEach((l, k) => l.setOpacity(k === i ? 0.75 : 0));
+  const last = frames.length - 1;
+  const ageMin = Math.max(0, Math.round((Date.now() / 1000 - frames[last].time) / 60));
+  setLabel(
+    (i === last ? "เรดาร์ล่าสุด " : "ย้อนหลัง ") + hhmm(frames[i].time),
+    `ข้อมูลล่าสุดเมื่อ ${ageMin} นาทีที่แล้ว · วนย้อนหลัง 2 ชม.`
+  );
+}
+
+function animate() {
+  clearTimeout(animTimer);
+  if (!frames.length) return;
+  const next = (frameIdx + 1) % frames.length;
+  showFrame(next);
+  animTimer = setTimeout(animate, next === frames.length - 1 ? 3000 : 700);
+}
+
+async function loadRadar() {
+  try {
+    const r = await fetch("https://api.rainviewer.com/public/weather-maps.json", { cache: "no-store" });
+    const j = await r.json();
+    const past = (j.radar && j.radar.past) || [];
+    if (!past.length) throw new Error("no frames");
+    clearTimeout(animTimer);
+    radar.forEach(l => map.removeLayer(l));
+    frames = past;
+    radar = past.map(f => L.tileLayer(`${j.host}${f.path}/256/{z}/{x}/{y}/2/1_1.png`, {
+      opacity: 0, maxNativeZoom: 7, maxZoom: 9, zIndex: 5
+    }).addTo(map));
+    showFrame(frames.length - 1);
+    if (!reduceMotion) animTimer = setTimeout(animate, 3000);
+  } catch (e) {
+    setLabel("โหลดเรดาร์ไม่ได้", "จะลองใหม่อีกครั้งใน 5 นาที");
+  }
+}
+
+async function initMap() {
+  try {
+    const cfg = await (await fetch("config.json?t=" + Date.now())).json();
+    const c = [cfg.latitude, cfg.longitude];
+    map = L.map("map", { zoomControl: false, attributionControl: true }).setView(c, 7);
+    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
+      maxZoom: 9, attribution: "© OpenStreetMap © CARTO"
+    }).addTo(map);
+    [50, 100].forEach(km => L.circle(c, { radius: km * 1000, color: "#eef2e8", weight: 1, opacity: .45, dashArray: "4 6", fill: false, interactive: false }).addTo(map));
+    L.circleMarker(c, { radius: 9, color: "#fff", weight: 3, fillColor: "#ff7a59", fillOpacity: 1 }).addTo(map);
+    new ResizeObserver(() => map.invalidateSize()).observe($("#mapbox"));
+    loadRadar();
+    setInterval(loadRadar, 5 * 60 * 1000);
+  } catch (e) {
+    setLabel("เปิดแผนที่ไม่ได้", "");
+  }
+}
+
 tick(); setInterval(tick, 15000);
+initMap();
 load(); setInterval(load, 60000);
 </script>
 </body>

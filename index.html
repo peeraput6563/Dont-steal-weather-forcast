@@ -32,10 +32,10 @@
   }
   #stage {
     height: 100%;
-    padding: 3vh 3vw;
+    padding: 2.5vh 3vw;
     display: flex;
     flex-direction: column;
-    gap: 3vh;
+    gap: 2vh;
     transition: transform 20s linear;
   }
   header {
@@ -45,21 +45,21 @@
     gap: 3vw;
     flex-wrap: wrap;
   }
-  h1 { font-size: clamp(28px, 4.5vw, 72px); font-weight: 800; line-height: 1.1; }
-  #clock { font-size: clamp(18px, 2.4vw, 40px); color: var(--muted); }
-  .top-stats { display: flex; gap: 4vw; }
-  .stat .v { font-size: clamp(36px, 6vw, 100px); font-weight: 800; line-height: 1; }
-  .stat .l { font-size: clamp(14px, 1.6vw, 26px); color: var(--muted); margin-top: .4vh; }
+  h1 { font-size: clamp(26px, min(4vw, 7vh), 64px); font-weight: 800; line-height: 1.1; }
+  #clock { font-size: clamp(16px, min(2vw, 3.4vh), 36px); color: var(--muted); }
+  .top-stats { display: flex; gap: 3vw; }
+  .stat .v { font-size: clamp(32px, min(5vw, 9vh), 90px); font-weight: 800; line-height: 1; }
+  .stat .l { font-size: clamp(13px, min(1.4vw, 2.4vh), 24px); color: var(--muted); margin-top: .4vh; }
   .stat.rain.high .v { color: var(--wet); }
   .stat.vpd.ok .v { color: var(--good); }
   .stat.vpd.low .v { color: var(--wet); }
   .stat.vpd.high .v { color: var(--bad); }
-  .stat.gauge .v { color: var(--wet); }
-  #raincheck { font-size: clamp(16px, 2vw, 32px); color: var(--muted); }
+  .stat.rg .v { color: var(--wet); }
+  #raincheck { font-size: clamp(14px, min(1.8vw, 2.8vh), 30px); color: var(--muted); }
   #raincheck b.miss { color: var(--bad); }
   #raincheck b.false_alarm { color: var(--warn); }
   #raincheck b.match { color: var(--good); }
-  #vpdline { font-size: clamp(16px, 2vw, 32px); color: var(--muted); }
+  #vpdline { font-size: clamp(14px, min(1.8vw, 2.8vh), 30px); color: var(--muted); }
   #vpdline b { color: var(--text); }
 
   #plots {
@@ -73,18 +73,21 @@
     background: var(--card);
     border: 2px solid var(--line);
     border-radius: 18px;
-    padding: 3vh 2.5vw;
+    padding: 2vh 2vw;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
+    gap: 1vh;
     min-width: 0;
+    min-height: 0;
+    overflow: hidden;
   }
-  .plot .name { font-size: clamp(24px, 3.2vw, 52px); font-weight: 700; }
+  .plot .name { font-size: clamp(20px, min(3vw, 5vh), 52px); font-weight: 700; }
   .plot .big { display: flex; align-items: baseline; gap: .6vw; }
-  .plot .num { font-size: clamp(64px, 9vw, 200px); font-weight: 800; line-height: .95; }
-  .plot .unit { font-size: clamp(28px, 4vw, 64px); color: var(--muted); }
+  .plot .num { font-size: clamp(48px, min(9vw, 17vh), 200px); font-weight: 800; line-height: .95; }
+  .plot .unit { font-size: clamp(22px, min(3.5vw, 6vh), 60px); color: var(--muted); }
   .verdict {
-    font-size: clamp(22px, 3vw, 50px);
+    font-size: clamp(18px, min(2.6vw, 4.4vh), 48px);
     font-weight: 700;
     padding: 1.4vh 1.6vw;
     border-radius: 12px;
@@ -114,7 +117,7 @@
   #stale { color: var(--bad); font-weight: 700; }
 
   #main { flex: 1; min-height: 0; display: grid; grid-template-columns: 1.05fr 1fr; gap: 2.5vw; }
-  #left { display: flex; flex-direction: column; gap: 2vh; min-height: 0; min-width: 0; }
+  #left { display: grid; grid-template-rows: minmax(0, 1fr) auto auto; gap: 1.5vh; min-height: 0; min-width: 0; }
   #mapbox { position: relative; min-height: 0; border-radius: 18px; overflow: hidden; border: 2px solid var(--line); background: var(--card); }
   #map { position: absolute; inset: 0; background: #0d1511; }
   #maplabel {
@@ -126,6 +129,7 @@
   #maplabel .s { color: var(--muted); font-size: .8em; }
   #maplabel a { color: var(--muted); }
   .leaflet-container { font-family: inherit; }
+  .basemap { filter: invert(1) hue-rotate(180deg) saturate(.45) brightness(.78) contrast(.9); }
   @media (max-width: 900px) {
     #main { grid-template-columns: 1fr; }
     #mapbox { min-height: 45vh; }
@@ -146,7 +150,7 @@
     <div class="top-stats">
       <div class="stat"><div class="v" id="temp">--</div><div class="l">อุณหภูมิ</div></div>
       <div class="stat vpd" id="vpdbox"><div class="v" id="vpd">--</div><div class="l">VPD (kPa)</div></div>
-      <div class="stat gauge" id="gaugebox" hidden><div class="v" id="gauge">--</div><div class="l" id="gaugel">ฝนที่วัดได้ (มม.)</div></div>
+      <div class="stat rg" id="gaugebox" hidden><div class="v" id="gauge">--</div><div class="l" id="gaugel">ฝนที่วัดได้ (มม.)</div></div>
       <div class="stat rain" id="rainbox"><div class="v" id="rain">--</div><div class="l">โอกาสฝนวันนี้</div></div>
     </div>
   </header>
@@ -303,8 +307,8 @@ async function initMap() {
     const cfg = await (await fetch("config.json?t=" + Date.now())).json();
     const c = [cfg.latitude, cfg.longitude];
     map = L.map("map", { zoomControl: false, attributionControl: true }).setView(c, 7);
-    L.tileLayer("https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png", {
-      maxZoom: 9, attribution: "© OpenStreetMap © CARTO"
+    L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
+      maxZoom: 9, className: "basemap", attribution: "© OpenStreetMap"
     }).addTo(map);
     [50, 100].forEach(km => L.circle(c, { radius: km * 1000, color: "#eef2e8", weight: 1, opacity: .45, dashArray: "4 6", fill: false, interactive: false }).addTo(map));
     L.circleMarker(c, { radius: 9, color: "#fff", weight: 3, fillColor: "#ff7a59", fillOpacity: 1 }).addTo(map);

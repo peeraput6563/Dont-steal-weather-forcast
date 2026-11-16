@@ -53,6 +53,11 @@
   .stat.vpd.ok .v { color: var(--good); }
   .stat.vpd.low .v { color: var(--wet); }
   .stat.vpd.high .v { color: var(--bad); }
+  .stat.gauge .v { color: var(--wet); }
+  #raincheck { font-size: clamp(16px, 2vw, 32px); color: var(--muted); }
+  #raincheck b.miss { color: var(--bad); }
+  #raincheck b.false_alarm { color: var(--warn); }
+  #raincheck b.match { color: var(--good); }
   #vpdline { font-size: clamp(16px, 2vw, 32px); color: var(--muted); }
   #vpdline b { color: var(--text); }
 
@@ -121,11 +126,13 @@
     <div class="top-stats">
       <div class="stat"><div class="v" id="temp">--</div><div class="l">อุณหภูมิ</div></div>
       <div class="stat vpd" id="vpdbox"><div class="v" id="vpd">--</div><div class="l">VPD (kPa)</div></div>
+      <div class="stat gauge" id="gaugebox" hidden><div class="v" id="gauge">--</div><div class="l" id="gaugel">ฝนที่วัดได้ (มม.)</div></div>
       <div class="stat rain" id="rainbox"><div class="v" id="rain">--</div><div class="l">โอกาสฝนวันนี้</div></div>
     </div>
   </header>
 
   <section id="plots"></section>
+  <div id="raincheck"></div>
   <div id="vpdline"></div>
 
   <footer>
@@ -169,6 +176,18 @@ function render(d) {
   $("#temp").textContent = d.temp === null ? "--" : fmt(d.temp, 1) + "°";
   $("#rain").textContent = d.rain === null ? "--" : fmt(d.rain) + "%";
   $("#rainbox").classList.toggle("high", d.rain !== null && d.rain >= d.rain_threshold);
+  const g = d.rain_gauge;
+  $("#gaugebox").hidden = !g;
+  if (g) {
+    $("#gauge").textContent = fmt(g.daily, 1);
+    $("#gaugel").textContent = "ฝนวันนี้ (มม.)" + (g.hour_mm ? ` · ชม.นี้ ${fmt(g.hour_mm, 1)}` : "");
+  }
+  const note = d.state && d.state.last_note;
+  const fresh = note && (Date.now() - new Date(note.time).getTime()) < 6 * 3600 * 1000;
+  const label = { miss: "โมเดลพลาด", false_alarm: "โมเดลบอกฝนแต่ไม่ตก", match: "ตรงกับโมเดล", info: "" };
+  $("#raincheck").innerHTML = fresh
+    ? `ฝนจริงเทียบโมเดล: <b class="${note.kind}">${label[note.kind] || ""}</b> ${note.kind === "false_alarm" ? note.text.replace("☀️ ", "") : note.text}`
+    : "";
   $("#vpd").textContent = d.vpd === null || d.vpd === undefined ? "--" : fmt(d.vpd, 2);
   $("#vpdbox").className = "stat vpd " + (d.vpd_status || "");
   if (d.vpd_range) {

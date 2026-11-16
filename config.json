@@ -3,6 +3,8 @@
   "latitude": 10.677157,
   "longitude": 99.052846,
   "rain_threshold": 75,
+  "rain_min_mm": 0.2,
+  "low_prob": 30,
   "models": ["ecmwf_ifs025", "gfs_seamless", "icon_seamless", "jma_seamless"],
   "alert_hours": [7, 12, 17],
   "current_stage": "ใบเพสลาด",

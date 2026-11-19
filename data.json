@@ -1,16 +1,16 @@
 {
  "garden_name": "สวนแก่งกะอิ",
- "updated_at": "2026-11-19T14:49+07:00",
- "temp": 30.1,
- "humidity": 83.0,
- "rain": 85,
+ "updated_at": "2026-11-19T15:46+07:00",
+ "temp": 29.8,
+ "humidity": 85.0,
+ "rain": 82,
  "rain_day": 87,
  "rain_models": {
   "ecmwf_ifs025": 100,
   "gfs_seamless": 62,
-  "icon_seamless": 93
+  "icon_seamless": 83
  },
- "vpd": 0.73,
+ "vpd": 0.63,
  "vpd_status": "low",
  "vpd_text": "ต่ำกว่าช่วงเหมาะสม (อากาศชื้นมาก)",
  "vpd_stage": "ใบเพสลาด",
@@ -39,21 +39,22 @@
   }
  ],
  "state": {
-  "hour": "2026-11-19T14",
+  "hour": "2026-11-19T15",
   "daily_start": 52.6,
   "prob": 82,
   "models": {
-   "ecmwf_ifs025": 99,
-   "gfs_seamless": 55,
-   "icon_seamless": 93
+   "ecmwf_ifs025": 100,
+   "gfs_seamless": 62,
+   "icon_seamless": 83
   },
-  "mm_fc": 0.3,
+  "mm_fc": 0.1,
   "alerted": false,
   "last_note": {
-   "time": "2026-11-19T09:41+07:00",
-   "kind": "match",
-   "text": "ตรงกับโมเดล: บอกโอกาสฝน 38% (คาดฝน ~0.2 มม.)"
-  }
+   "time": "2026-11-19T15:46+07:00",
+   "kind": "false_alarm",
+   "text": "☀️ โมเดลบอกฝน 82% ช่วง 14:00-15:00 แต่ในแปลงไม่พบฝน (วัดได้ 0.0 มม.)"
+  },
+  "last_false_alarm": "2026-11-19T15:46+07:00"
  },
  "last_sent": "2026-11-18-7"
 }

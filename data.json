@@ -1,14 +1,14 @@
 {
  "garden_name": "สวนแก่งกะอิ",
- "updated_at": "2026-11-19T23:30+07:00",
+ "updated_at": "2026-11-20T00:26+07:00",
  "temp": 24.2,
  "humidity": 99.0,
- "rain": 7,
- "rain_day": 81,
+ "rain": 50,
+ "rain_day": 50,
  "rain_models": {
-  "ecmwf_ifs025": 17,
-  "gfs_seamless": 0,
-  "icon_seamless": 5
+  "ecmwf_ifs025": 92,
+  "gfs_seamless": 10,
+  "icon_seamless": 48
  },
  "vpd": 0.03,
  "vpd_status": "low",
@@ -23,15 +23,15 @@
  "rain_threshold": 75,
  "rain_gauge": {
   "source": "rainfall",
-  "daily": 77.3,
-  "rate": 0.0,
+  "daily": 1.5,
+  "rate": 9.0,
   "hour_mm": 0.0
  },
- "hour_prob": 7,
+ "hour_prob": 10,
  "plots": [
   {
    "name": "แก่งกะอิ",
-   "soil": 62.0,
+   "soil": 63.0,
    "water_below": 40,
    "skip_above": 50,
    "status": "skip",
@@ -39,20 +39,20 @@
   }
  ],
  "state": {
-  "hour": "2026-11-19T23",
-  "daily_start": 77.3,
-  "prob": 7,
+  "hour": "2026-11-20T00",
+  "daily_start": 1.5,
+  "prob": 10,
   "models": {
-   "ecmwf_ifs025": 17,
+   "ecmwf_ifs025": 21,
    "gfs_seamless": 0,
-   "icon_seamless": 5
+   "icon_seamless": 8
   },
   "mm_fc": 0.0,
-  "alerted": false,
+  "alerted": true,
   "last_note": {
-   "time": "2026-11-19T15:46+07:00",
-   "kind": "false_alarm",
-   "text": "☀️ โมเดลบอกฝน 82% ช่วง 14:00-15:00 แต่ในแปลงไม่พบฝน (วัดได้ 0.0 มม.)"
+   "time": "2026-11-20T00:26+07:00",
+   "kind": "miss",
+   "text": "โมเดลพลาด: บอกโอกาสฝนชั่วโมงนี้แค่ 10% (คาดฝน ~0.0 มม.)"
   },
   "last_false_alarm": "2026-11-19T15:46+07:00"
  },

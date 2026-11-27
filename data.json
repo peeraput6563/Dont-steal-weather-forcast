@@ -1,6 +1,6 @@
 {
  "garden_name": "สวนแก่งกะอิ",
- "updated_at": "2026-11-28T01:17+07:00",
+ "updated_at": "2026-11-28T02:14+07:00",
  "temp": 23.0,
  "humidity": 99.0,
  "rain": 35,
@@ -39,7 +39,7 @@
   }
  ],
  "state": {
-  "hour": "2026-11-28T01",
+  "hour": "2026-11-28T02",
   "daily_start": 0.0,
   "prob": 0,
   "models": {

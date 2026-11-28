@@ -1,8 +1,8 @@
 {
  "garden_name": "สวนแก่งกะอิ",
- "updated_at": "2026-11-28T10:28+07:00",
- "temp": 31.7,
- "humidity": 69.0,
+ "updated_at": "2026-11-28T11:28+07:00",
+ "temp": 31.8,
+ "humidity": 71.0,
  "rain": 31,
  "rain_day": 32,
  "rain_models": {
@@ -10,7 +10,7 @@
   "gfs_seamless": 0,
   "icon_seamless": 3
  },
- "vpd": 1.45,
+ "vpd": 1.36,
  "vpd_status": "ok",
  "vpd_text": "อยู่ในช่วงเหมาะสม",
  "vpd_stage": "ใบเพสลาด",
@@ -20,7 +20,8 @@
  ],
  "vpd_match": [
   "ใบเพสลาด",
-  "ติดผลเล็ก"
+  "ติดผลเล็ก",
+  "ขยายผล"
  ],
  "th_source": "outdoor",
  "rain_threshold": 75,
@@ -30,7 +31,7 @@
   "rate": 0.0,
   "hour_mm": 0.0
  },
- "hour_prob": 5,
+ "hour_prob": 13,
  "plots": [
   {
    "name": "แก่งกะอิ",
@@ -42,15 +43,15 @@
   }
  ],
  "state": {
-  "hour": "2026-11-28T10",
+  "hour": "2026-11-28T11",
   "daily_start": 0.0,
-  "prob": 5,
+  "prob": 13,
   "models": {
-   "ecmwf_ifs025": 14,
+   "ecmwf_ifs025": 40,
    "gfs_seamless": 0,
    "icon_seamless": 0
   },
-  "mm_fc": 0.0,
+  "mm_fc": 0.1,
   "alerted": false,
   "last_note": {
    "time": "2026-11-20T00:26+07:00",
